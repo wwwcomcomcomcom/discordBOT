@@ -23,14 +23,17 @@ new Command(
   "!도박.동전",
   "동전던지기",
   ([message], _bet: string, predict: string) => {
-    const bet = Number(_bet);
-    if (isNaN(bet)) {
-      message.reply("베팅할 금액을 입력해주세요.");
-      return;
-    }
-    if (bet < 100) {
-      message.reply("100원 이상부터 베팅해주세요.");
-      return;
+    const allIn = _bet === "올인";
+    let intBet = Number(_bet);
+    if (!allIn) {
+      if (isNaN(intBet)) {
+        message.reply("베팅할 금액을 입력해주세요.");
+        return;
+      }
+      if (intBet < 100) {
+        message.reply("100원 이상부터 베팅해주세요.");
+        return;
+      }
     }
     if (!["앞면", "뒷면", "앞", "뒤"].includes(predict)) {
       message.reply("올바른 예측을 입력해주세요. (앞면, 뒷면, 앞, 뒤)");
@@ -39,23 +42,24 @@ new Command(
     predict = predict.slice(0, 1);
     if (predict === "뒤") predict = "뒷";
     Repository.getUser(message.author.id).then((user) => {
+      const bet = allIn ? user.money : BigInt(intBet);
       if (user.isCooldown()) {
         message.reply("쿨타임이 남아있습니다.");
         return;
       } else {
         user.updateCooldown();
       }
-      if (user.money < BigInt(bet)) {
+      if (user.money < bet) {
         message.reply(`돈이 부족합니다. 잔액: ${user.money}원`);
         return;
       }
       const result = Math.random() > 0.5 ? "앞" : "뒷";
       if (result === predict) {
-        user.money += BigInt(bet);
+        user.money += bet;
         Repository.updateUser(user);
         message.reply(`${result}면! ${bet}원을 얻었습니다.`);
       } else {
-        user.money -= BigInt(bet);
+        user.money -= bet;
         Repository.updateUser(user);
         message.reply(`${result}면! ${bet}원을 잃었습니다.`);
       }

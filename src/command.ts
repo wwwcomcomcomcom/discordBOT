@@ -1,10 +1,4 @@
-import { ClientEvents, Events, OmitPartialGroupDMChannel } from "discord.js";
-
-enum ParamType {
-  STRING,
-  NUMBER,
-  BOOLEAN,
-}
+import { ClientEvents, Events } from "discord.js";
 
 export class Command {
   constructor(

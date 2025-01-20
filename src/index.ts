@@ -15,9 +15,6 @@ import "dotenv/config";
 import { Command } from "./command";
 
 import "./money/moneyCommand";
-import { deployCommands } from "./slashCommands/utils/deploy";
-
-deployCommands();
 
 const client = new Client({
   intents: [

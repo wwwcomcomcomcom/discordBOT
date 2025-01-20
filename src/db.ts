@@ -11,7 +11,7 @@ export async function createUser(id: string) {
         money: BigInt(0).toString(),
       },
     })
-    .catch((reason) => {
+    .catch((reason: any) => {
       console.error(reason);
     })
     .finally(() => {
@@ -41,14 +41,21 @@ export async function getUser(id: string): Promise<CustomUser> {
         id: id,
       },
     })
-    .then(async (userData) => {
-      if (userData === null) {
-        await createUser(id);
-        return new CustomUser(id, BigInt(0));
-      } else {
-        return new CustomUser(userData.id, BigInt(userData.money));
+    .then(
+      async (
+        userData: {
+          id: string;
+          money: string | number | bigint | boolean;
+        } | null
+      ) => {
+        if (userData === null) {
+          await createUser(id);
+          return new CustomUser(id, BigInt(0));
+        } else {
+          return new CustomUser(userData.id, BigInt(userData.money));
+        }
       }
-    });
+    );
 }
 export function updateUser(user: CustomUser) {
   prisma.user
@@ -60,7 +67,7 @@ export function updateUser(user: CustomUser) {
         money: user.money.toString(),
       },
     })
-    .catch((reason) => {
+    .catch((reason: any) => {
       console.error(reason);
     })
     .finally(() => {
@@ -69,9 +76,11 @@ export function updateUser(user: CustomUser) {
 }
 
 export async function getAllUsers(): Promise<CustomUser[]> {
-  return await prisma.user.findMany().then((users) => {
-    return users.map((user) => {
-      return new CustomUser(user.id, BigInt(user.money));
-    });
+  return await prisma.user.findMany().then((users: any[]) => {
+    return users.map(
+      (user: { id: string; money: string | number | bigint | boolean }) => {
+        return new CustomUser(user.id, BigInt(user.money));
+      }
+    );
   });
 }
