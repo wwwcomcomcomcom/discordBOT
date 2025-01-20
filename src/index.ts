@@ -1,6 +1,7 @@
 import {
   ActionRowBuilder,
   ButtonBuilder,
+  ButtonInteraction,
   ButtonStyle,
   Client,
   Collection,
@@ -8,6 +9,7 @@ import {
   GatewayIntentBits,
   MessageActionRowComponentBuilder,
   StringSelectMenuBuilder,
+  StringSelectMenuInteraction,
   StringSelectMenuOptionBuilder,
   UserSelectMenuBuilder,
 } from "discord.js";
@@ -86,7 +88,34 @@ new Command("!test", "Test command", ([message]) => {
   });
 });
 
-client.on(Events.InteractionCreate, (interaction) => {});
+client.on(Events.InteractionCreate, (interaction) => {
+  if (!interaction.isMessageComponent()) return;
+  console.log(interaction.customId);
+  if (interaction.isButton()) {
+    handleButtonInteraction(interaction);
+  } else if (interaction.isStringSelectMenu()) {
+    handleSelectMenuInteraction(interaction);
+  } else if (interaction.isUserSelectMenu()) {
+    interaction.reply(`You selected <@${interaction.values.join(", ")}>`);
+  }
+});
+function handleButtonInteraction(interaction: ButtonInteraction) {
+  if (interaction.customId === "confirm") {
+    interaction.reply("Confirmed!");
+  } else if (interaction.customId === "cancel") {
+    interaction.reply("Cancelled!");
+    interaction.message.edit({
+      content: ":x: This message has been closed.",
+      components: [],
+    });
+  }
+}
+function handleSelectMenuInteraction(interaction: StringSelectMenuInteraction) {
+  console.log(interaction.customId);
+  if (interaction.customId === "starter") {
+    interaction.reply(`You selected ${interaction.values[0]}`);
+  }
+}
 
 client.on(Events.MessageCreate, (message) => {
   Command.handleMessage([message]);
