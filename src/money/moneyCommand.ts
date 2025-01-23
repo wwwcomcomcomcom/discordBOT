@@ -1,5 +1,17 @@
 import { Command } from "../command";
 import * as Repository from "../db";
+import { CustomUser } from "../user";
+import { playCoin, playDice } from "./moneyGame";
+
+function isNumberInput(input: string): boolean {
+  return !isNaN(Number(input));
+}
+function parseBet(bet: string, user: CustomUser): bigint {
+  if (bet === "올인") {
+    return user.money;
+  }
+  return BigInt(bet);
+}
 
 new Command("!일", "일함", ([message]) => {
   Repository.getUser(message.author.id).then((user) => {
@@ -22,48 +34,29 @@ new Command("!일", "일함", ([message]) => {
 new Command(
   "!도박.동전",
   "동전던지기",
-  ([message], _bet: string, predict: string) => {
-    const allIn = _bet === "올인";
-    let intBet = Number(_bet);
-    if (!allIn) {
-      if (isNaN(intBet)) {
-        message.reply("베팅할 금액을 입력해주세요.");
-        return;
-      }
-      if (intBet < 100) {
-        message.reply("100원 이상부터 베팅해주세요.");
-        return;
-      }
-    }
-    if (!["앞면", "뒷면", "앞", "뒤"].includes(predict)) {
-      message.reply("올바른 예측을 입력해주세요. (앞면, 뒷면, 앞, 뒤)");
+  async ([message], _bet: string, predict: string) => {
+    const user = await Repository.getUser(message.author.id);
+    try {
+      const bet = parseBet(_bet, user);
+      message.reply(playCoin(user, bet, predict));
+    } catch (e) {
+      message.reply("베팅할 금액을 입력해주세요.");
       return;
     }
-    predict = predict.slice(0, 1);
-    if (predict === "뒤") predict = "뒷";
-    Repository.getUser(message.author.id).then((user) => {
-      const bet = allIn ? user.money : BigInt(intBet);
-      if (user.isCooldown()) {
-        message.reply("쿨타임이 남아있습니다.");
-        return;
-      } else {
-        user.updateCooldown();
-      }
-      if (user.money < bet) {
-        message.reply(`돈이 부족합니다. 잔액: ${user.money}원`);
-        return;
-      }
-      const result = Math.random() > 0.5 ? "앞" : "뒷";
-      if (result === predict) {
-        user.money += bet;
-        Repository.updateUser(user);
-        message.reply(`${result}면! ${bet}원을 얻었습니다.`);
-      } else {
-        user.money -= bet;
-        Repository.updateUser(user);
-        message.reply(`${result}면! ${bet}원을 잃었습니다.`);
-      }
-    });
+  }
+);
+new Command(
+  "!도박.주사위",
+  "주사위 굴리기",
+  async ([message], _bet: string, predict: string) => {
+    const user = await Repository.getUser(message.author.id);
+    try {
+      const bet = parseBet(_bet, user);
+      message.reply(playDice(user, bet, Number(predict)));
+    } catch (e) {
+      message.reply("베팅할 금액을 입력해주세요.");
+      return;
+    }
   }
 );
 
